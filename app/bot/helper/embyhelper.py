@@ -7,16 +7,23 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
     try:
         # Create new Emby user
         url = f"{emby_url}/Users/New"
-        querystring = {"api_key": emby_api_key}
+        headers = {
+            "X-Emby-Token": emby_api_key,
+            "Content-Type": "application/json"
+        }
         payload = {
             "Name": username,
             "Password": password
         }
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(url, json=payload, headers=headers, params=querystring)
+        response = requests.post(url, json=payload, headers=headers)
 
         # Log the raw response for debugging
         print(f"Emby API Response: {response.text}")
+
+        # Check if the response is HTML (indicating an error or redirection)
+        if response.headers.get("Content-Type", "").startswith("text/html"):
+            print("Error: Received HTML response instead of JSON. Check Emby server URL and API key.")
+            return False
 
         if response.status_code != 200:
             print(f"Error creating new Emby user: {response.text}")
@@ -26,21 +33,10 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
 
         # Grant access to User
         url = f"{emby_url}/Users/{userId}/Policy"
-        querystring = {"api_key": emby_api_key}
-
-        enabled_folders = []
-        server_libs = get_libraries(emby_url, emby_api_key)
-        
-        if emby_libs[0] != "all":
-            for lib in emby_libs:
-                found = False
-                for server_lib in server_libs:
-                    if lib == server_lib['Name']:
-                        enabled_folders.append(server_lib['ItemId'])
-                        found = True
-                if not found:
-                    print(f"Couldn't find Emby Library: {lib}")
-
+        headers = {
+            "X-Emby-Token": emby_api_key,
+            "Content-Type": "application/json"
+        }
         payload = {
             "IsAdministrator": False,
             "IsHidden": True,
@@ -68,7 +64,7 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
             "EnableAllDevices": True,
             "EnabledChannels": [],
             "EnableAllChannels": False,
-            "EnabledFolders": enabled_folders,
+            "EnabledFolders": [],
             "EnableAllFolders": emby_libs[0] == "all",
             "InvalidLoginAttemptCount": 0,
             "LoginAttemptsBeforeLockout": -1,
@@ -81,9 +77,7 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
             "PasswordResetProviderId": "Emby.Server.Implementations.Users.DefaultPasswordResetProvider",
             "SyncPlayAccess": "CreateAndJoinGroups"
         }
-        headers = {"content-type": "application/json"}
-
-        response = requests.post(url, json=payload, headers=headers, params=querystring)
+        response = requests.post(url, json=payload, headers=headers)
 
         # Log the raw response for debugging
         print(f"Emby API Response: {response.text}")
@@ -101,8 +95,8 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
 def get_libraries(emby_url, emby_api_key):
     try:
         url = f"{emby_url}/Library/VirtualFolders"
-        querystring = {"api_key": emby_api_key}
-        response = requests.get(url, params=querystring)
+        headers = {"X-Emby-Token": emby_api_key}
+        response = requests.get(url, headers=headers)
 
         # Log the raw response for debugging
         print(f"Emby API Response: {response.text}")
@@ -143,8 +137,8 @@ def remove_user(emby_url, emby_api_key, emby_username):
         
         # Delete User
         url = f"{emby_url}/Users/{userId}"
-        querystring = {"api_key": emby_api_key}
-        response = requests.delete(url, params=querystring)
+        headers = {"X-Emby-Token": emby_api_key}
+        response = requests.delete(url, headers=headers)
 
         # Log the raw response for debugging
         print(f"Emby API Response: {response.text}")
@@ -161,8 +155,8 @@ def remove_user(emby_url, emby_api_key, emby_username):
 def get_users(emby_url, emby_api_key):
     try:
         url = f"{emby_url}/Users"
-        querystring = {"api_key": emby_api_key}
-        response = requests.get(url, params=querystring)
+        headers = {"X-Emby-Token": emby_api_key}
+        response = requests.get(url, headers=headers)
 
         # Log the raw response for debugging
         print(f"Emby API Response: {response.text}")
@@ -195,8 +189,8 @@ def generate_password(length, lower=True, upper=True, numbers=True, symbols=True
 def get_config(emby_url, emby_api_key):
     try:
         url = f"{emby_url}/System/Configuration"
-        querystring = {"api_key": emby_api_key}
-        response = requests.get(url, params=querystring, timeout=5)
+        headers = {"X-Emby-Token": emby_api_key}
+        response = requests.get(url, headers=headers, timeout=5)
 
         # Log the raw response for debugging
         print(f"Emby API Response: {response.text}")
@@ -213,8 +207,8 @@ def get_config(emby_url, emby_api_key):
 def get_status(emby_url, emby_api_key):
     try:
         url = f"{emby_url}/System/Configuration"
-        querystring = {"api_key": emby_api_key}
-        response = requests.get(url, params=querystring, timeout=5)
+        headers = {"X-Emby-Token": emby_api_key}
+        response = requests.get(url, headers=headers, timeout=5)
 
         # Log the raw response for debugging
         print(f"Emby API Response: {response.text}")
