@@ -3,10 +3,10 @@ name: Build and Push Docker Image to GHCR
 on:
   push:
     branches:
-      - emby-support  # Trigger on push to main branch
+      - emby  # Trigger on push to main branch
   pull_request:
     branches:
-      - emby-support  # Trigger on pull requests to main branch
+      - emby  # Trigger on pull requests to main branch
 
 # Add permissions for the GITHUB_TOKEN
 permissions:
