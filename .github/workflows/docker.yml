@@ -3,7 +3,7 @@ name: Docker Build and Push
 on:
   push:
     branches:
-      - main  # Trigger on pushes to the main branch
+      - main
       - emby-support
 
 jobs:
