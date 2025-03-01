@@ -1,6 +1,6 @@
 import sqlite3
 
-CURRENT_VERSION = 'Membarr V1.1'
+CURRENT_VERSION = 'Membarr V1.2'  # Updated version to reflect Emby support
 
 table_history = {
     'Invitarr V1.0': [
@@ -13,6 +13,13 @@ table_history = {
         (1, 'discord_username', 'TEXT', 1, None, 0),
         (2, 'email', 'TEXT', 0, None, 0),
         (3, 'jellyfin_username', 'TEXT', 0, None, 0)
+    ],
+    'Membarr V1.2': [  # Added Emby support
+        (0, 'id', 'INTEGER', 1, None, 1),
+        (1, 'discord_username', 'TEXT', 1, None, 0),
+        (2, 'email', 'TEXT', 0, None, 0),
+        (3, 'jellyfin_username', 'TEXT', 0, None, 0),
+        (4, 'emby_username', 'TEXT', 0, None, 0)  # New column for Emby
     ]
 }
 
@@ -61,5 +68,31 @@ def update_table(conn, tablename):
         conn.commit()
         version = 'Membarr V1.1'
 
+    # Update to Membarr V1.2 table (with Emby support)
+    if version == 'Membarr V1.1':
+        print("Upgrading DB table from Membarr V1.1 to Membarr V1.2")
+        # Create temp table
+        conn.execute(
+        '''CREATE TABLE "membarr_temp_upgrade_table" (
+        "id"	INTEGER NOT NULL UNIQUE,
+        "discord_username"	TEXT NOT NULL UNIQUE,
+        "email"	TEXT,
+        "jellyfin_username" TEXT,
+        "emby_username" TEXT,  # New column for Emby
+        PRIMARY KEY("id" AUTOINCREMENT)
+        );''')
+        conn.execute(f'''
+        INSERT INTO membarr_temp_upgrade_table(id, discord_username, email, jellyfin_username)
+        SELECT id, discord_username, email, jellyfin_username
+        FROM {tablename};
+        ''')
+        conn.execute(f'''
+        DROP TABLE {tablename};
+        ''')
+        conn.execute(f'''
+        ALTER TABLE membarr_temp_upgrade_table RENAME TO {tablename}
+        ''')
+        conn.commit()
+        version = 'Membarr V1.2'
+
     print('------')
-    
