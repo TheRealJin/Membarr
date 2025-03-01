@@ -176,8 +176,6 @@ class app(commands.Cog):
     
     async def getusername(self, after):
         username = None
-        await embedinfo(after, f"Welcome To Emby! Please reply with your username to be added to the Emby server!")  # Updated to Emby
-        await embedinfo(after, f"If you do not respond within 24 hours, the request will be cancelled, and the server admin will need to add you manually.")
         while (username is None):
             def check(m):
                 return m.author == after and not m.guild
