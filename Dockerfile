@@ -1,14 +1,33 @@
 FROM python:3.9.1-alpine
 
-RUN \
-    echo "http://dl-8.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+# Add Alpine edge/testing repositories
+RUN echo "http://dl-8.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
     echo "http://dl-8.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 
-# Install basic dependencies
-RUN \
-    apk --no-cache add -q git cloc openssl openssl-dev openssh alpine-sdk bash gettext sudo build-base gnupg linux-headers xz
+# Install dependencies
+RUN apk --no-cache add \
+    git \
+    cloc \
+    openssl \
+    openssl-dev \
+    openssh \
+    alpine-sdk \
+    bash \
+    gettext \
+    sudo \
+    build-base \
+    gnupg \
+    linux-headers \
+    xz
 
+# Set working directory
 WORKDIR /app
+
+# Copy application code
 COPY . .
-RUN pip install -Ur requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Set the default command
 CMD ["python", "-u", "run.py"]
