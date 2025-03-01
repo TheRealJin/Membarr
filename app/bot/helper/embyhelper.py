@@ -4,7 +4,7 @@ import string
 
 def add_user(emby_url, emby_api_key, username, password, emby_libs):
     try:
-        # Create a new user
+        # Create new Emby user
         url = f"{emby_url}/Users/New"
         querystring = {"api_key": emby_api_key}
         payload = {
@@ -13,20 +13,19 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
         }
         headers = {"Content-Type": "application/json"}
         response = requests.post(url, json=payload, headers=headers, params=querystring)
+        userId = response.json()["Id"]
 
         if response.status_code != 200:
             print(f"Error creating new Emby user: {response.text}")
             return False
-
-        userId = response.json()["Id"]
-
+        
         # Grant access to User
         url = f"{emby_url}/Users/{userId}/Policy"
         querystring = {"api_key": emby_api_key}
 
         enabled_folders = []
         server_libs = get_libraries(emby_url, emby_api_key)
-
+        
         if emby_libs[0] != "all":
             for lib in emby_libs:
                 found = False
@@ -85,12 +84,10 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
             return True
         else:
             print(f"Error setting user permissions: {response.text}")
-            return False
 
     except Exception as e:
-        print(f"Error in add_user: {e}")
+        print(e)
         return False
-
 
 def get_libraries(emby_url, emby_api_key):
     url = f"{emby_url}/Library/VirtualFolders"
@@ -98,7 +95,7 @@ def get_libraries(emby_url, emby_api_key):
     response = requests.get(url, params=querystring)
 
     return response.json()
-
+    
 
 def verify_username(emby_url, emby_api_key, username):
     users = get_users(emby_url, emby_api_key)
@@ -110,7 +107,6 @@ def verify_username(emby_url, emby_api_key, username):
 
     return valid
 
-
 def remove_user(emby_url, emby_api_key, emby_username):
     try:
         # Get User ID
@@ -119,12 +115,12 @@ def remove_user(emby_url, emby_api_key, emby_username):
         for user in users:
             if user['Name'].lower() == emby_username.lower():
                 userId = user['Id']
-
+        
         if userId is None:
             # User not found
             print(f"Error removing user {emby_username} from Emby: Could not find user.")
             return False
-
+        
         # Delete User
         url = f"{emby_url}/Users/{userId}"
         querystring = {"api_key": emby_api_key}
@@ -134,12 +130,9 @@ def remove_user(emby_url, emby_api_key, emby_username):
             return True
         else:
             print(f"Error deleting Emby user: {response.text}")
-            return False
-
     except Exception as e:
-        print(f"Error in remove_user: {e}")
+        print(e)
         return False
-
 
 def get_users(emby_url, emby_api_key):
     url = f"{emby_url}/Users"
@@ -148,12 +141,11 @@ def get_users(emby_url, emby_api_key):
 
     return response.json()
 
-
 def generate_password(length, lower=True, upper=True, numbers=True, symbols=True):
     character_list = []
     if not (lower or upper or numbers or symbols):
         raise ValueError("At least one character type must be provided")
-
+        
     if lower:
         character_list += string.ascii_lowercase
     if upper:
@@ -163,15 +155,13 @@ def generate_password(length, lower=True, upper=True, numbers=True, symbols=True
     if symbols:
         character_list += string.punctuation
 
-    return "".join(random.choice(character_list) for _ in range(length))
-
+    return "".join(random.choice(character_list) for i in range(length))
 
 def get_config(emby_url, emby_api_key):
     url = f"{emby_url}/System/Configuration"
     querystring = {"api_key": emby_api_key}
     response = requests.get(url, params=querystring, timeout=5)
     return response.json()
-
 
 def get_status(emby_url, emby_api_key):
     url = f"{emby_url}/System/Configuration"
