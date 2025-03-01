@@ -33,10 +33,10 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/membarr:latest .
+          docker build -t ghcr.io/therealjin/membarr:latest .
 
       - name: Push Docker image
         run: |
-          docker tag ghcr.io/${{ github.repository_owner }}/membarr:latest ghcr.io/${{ github.repository_owner }}/membarr:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository_owner }}/membarr:latest
-          docker push ghcr.io/${{ github.repository_owner }}/membarr:${{ github.sha }}
+          docker tag ghcr.io/therealjin/membarr:latest ghcr.io/therealjin/membarr:${{ github.sha }}
+          docker push ghcr.io/therealjin/membarr:latest
+          docker push ghcr.io/therealjin/membarr:${{ github.sha }}
