@@ -1,6 +1,7 @@
 import requests
 import random
 import string
+import json
 
 def add_user(emby_url, emby_api_key, username, password, emby_libs):
     try:
@@ -13,12 +14,16 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
         }
         headers = {"Content-Type": "application/json"}
         response = requests.post(url, json=payload, headers=headers, params=querystring)
-        userId = response.json()["Id"]
+
+        # Log the raw response for debugging
+        print(f"Emby API Response: {response.text}")
 
         if response.status_code != 200:
             print(f"Error creating new Emby user: {response.text}")
             return False
-        
+
+        userId = response.json()["Id"]
+
         # Grant access to User
         url = f"{emby_url}/Users/{userId}/Policy"
         querystring = {"api_key": emby_api_key}
@@ -80,32 +85,47 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
 
         response = requests.post(url, json=payload, headers=headers, params=querystring)
 
+        # Log the raw response for debugging
+        print(f"Emby API Response: {response.text}")
+
         if response.status_code == 200 or response.status_code == 204:
             return True
         else:
             print(f"Error setting user permissions: {response.text}")
+            return False
 
     except Exception as e:
-        print(e)
+        print(f"Exception in add_user: {e}")
         return False
 
 def get_libraries(emby_url, emby_api_key):
-    url = f"{emby_url}/Library/VirtualFolders"
-    querystring = {"api_key": emby_api_key}
-    response = requests.get(url, params=querystring)
+    try:
+        url = f"{emby_url}/Library/VirtualFolders"
+        querystring = {"api_key": emby_api_key}
+        response = requests.get(url, params=querystring)
 
-    return response.json()
-    
+        # Log the raw response for debugging
+        print(f"Emby API Response: {response.text}")
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Error fetching libraries: {response.text}")
+            return []
+    except Exception as e:
+        print(f"Exception in get_libraries: {e}")
+        return []
 
 def verify_username(emby_url, emby_api_key, username):
-    users = get_users(emby_url, emby_api_key)
-    valid = True
-    for user in users:
-        if user['Name'] == username:
-            valid = False
-            break
-
-    return valid
+    try:
+        users = get_users(emby_url, emby_api_key)
+        for user in users:
+            if user['Name'] == username:
+                return False
+        return True
+    except Exception as e:
+        print(f"Exception in verify_username: {e}")
+        return False
 
 def remove_user(emby_url, emby_api_key, emby_username):
     try:
@@ -126,20 +146,35 @@ def remove_user(emby_url, emby_api_key, emby_username):
         querystring = {"api_key": emby_api_key}
         response = requests.delete(url, params=querystring)
 
+        # Log the raw response for debugging
+        print(f"Emby API Response: {response.text}")
+
         if response.status_code == 204 or response.status_code == 200:
             return True
         else:
             print(f"Error deleting Emby user: {response.text}")
+            return False
     except Exception as e:
-        print(e)
+        print(f"Exception in remove_user: {e}")
         return False
 
 def get_users(emby_url, emby_api_key):
-    url = f"{emby_url}/Users"
-    querystring = {"api_key": emby_api_key}
-    response = requests.get(url, params=querystring)
+    try:
+        url = f"{emby_url}/Users"
+        querystring = {"api_key": emby_api_key}
+        response = requests.get(url, params=querystring)
 
-    return response.json()
+        # Log the raw response for debugging
+        print(f"Emby API Response: {response.text}")
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Error fetching users: {response.text}")
+            return []
+    except Exception as e:
+        print(f"Exception in get_users: {e}")
+        return []
 
 def generate_password(length, lower=True, upper=True, numbers=True, symbols=True):
     character_list = []
@@ -158,13 +193,33 @@ def generate_password(length, lower=True, upper=True, numbers=True, symbols=True
     return "".join(random.choice(character_list) for i in range(length))
 
 def get_config(emby_url, emby_api_key):
-    url = f"{emby_url}/System/Configuration"
-    querystring = {"api_key": emby_api_key}
-    response = requests.get(url, params=querystring, timeout=5)
-    return response.json()
+    try:
+        url = f"{emby_url}/System/Configuration"
+        querystring = {"api_key": emby_api_key}
+        response = requests.get(url, params=querystring, timeout=5)
+
+        # Log the raw response for debugging
+        print(f"Emby API Response: {response.text}")
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Error fetching config: {response.text}")
+            return {}
+    except Exception as e:
+        print(f"Exception in get_config: {e}")
+        return {}
 
 def get_status(emby_url, emby_api_key):
-    url = f"{emby_url}/System/Configuration"
-    querystring = {"api_key": emby_api_key}
-    response = requests.get(url, params=querystring, timeout=5)
-    return response.status_code
+    try:
+        url = f"{emby_url}/System/Configuration"
+        querystring = {"api_key": emby_api_key}
+        response = requests.get(url, params=querystring, timeout=5)
+
+        # Log the raw response for debugging
+        print(f"Emby API Response: {response.text}")
+
+        return response.status_code
+    except Exception as e:
+        print(f"Exception in get_status: {e}")
+        return 500
