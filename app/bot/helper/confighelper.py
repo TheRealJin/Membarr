@@ -13,9 +13,8 @@ config = configparser.ConfigParser()
 CONFIG_KEYS = [
     'username', 'password', 'discord_bot_token', 'plex_user', 'plex_pass', 'plex_token',
     'plex_base_url', 'plex_roles', 'plex_server_name', 'plex_libs', 'owner_id', 'channel_id',
-    'auto_remove_user', 'jellyfin_api_key', 'jellyfin_server_url', 'jellyfin_roles',
-    'jellyfin_libs', 'plex_enabled', 'jellyfin_enabled', 'jellyfin_external_url',
-    'emby_api_key', 'emby_server_url', 'emby_roles', 'emby_libs', 'emby_enabled', 'emby_external_url'
+    'auto_remove_user', 'emby_api_key', 'emby_server_url', 'emby_roles', 'emby_libs',
+    'plex_enabled', 'emby_enabled', 'emby_external_url'
 ]
 
 # Settings
@@ -27,16 +26,11 @@ PLEX_SERVER_NAME = ""
 PLEX_TOKEN = ""
 PLEX_BASE_URL = ""
 Plex_LIBS = None
-JELLYFIN_SERVER_URL = ""
-JELLYFIN_API_KEY = ""
-jellyfin_libs = ""
-jellyfin_roles = None
 EMBY_SERVER_URL = ""
 EMBY_API_KEY = ""
 emby_libs = ""
 emby_roles = None
 plex_configured = True
-jellyfin_configured = True
 emby_configured = True  # Emby configuration flag
 
 switch = 0
@@ -105,42 +99,6 @@ if Plex_LIBS is None:
 else:
     Plex_LIBS = list(Plex_LIBS.split(','))
 
-# Jellyfin Configuration
-try:
-    JELLYFIN_SERVER_URL = config.get(BOT_SECTION, 'jellyfin_server_url')
-    JELLYFIN_API_KEY = config.get(BOT_SECTION, "jellyfin_api_key")
-except:
-    print("Could not load Jellyfin config")
-    jellyfin_configured = False
-
-try:
-    JELLYFIN_EXTERNAL_URL = config.get(BOT_SECTION, "jellyfin_external_url")
-    if not JELLYFIN_EXTERNAL_URL:
-        JELLYFIN_EXTERNAL_URL = JELLYFIN_SERVER_URL
-except:
-    JELLYFIN_EXTERNAL_URL = JELLYFIN_SERVER_URL
-    print("Could not get Jellyfin external url. Defaulting to server url.")
-
-try:
-    jellyfin_roles = config.get(BOT_SECTION, 'jellyfin_roles')
-except:
-    print("Could not get Jellyfin roles config")
-    jellyfin_roles = None
-if jellyfin_roles:
-    jellyfin_roles = list(jellyfin_roles.split(','))
-else:
-    jellyfin_roles = []
-
-try:
-    jellyfin_libs = config.get(BOT_SECTION, 'jellyfin_libs')
-except:
-    print("Could not get Jellyfin libs config. Defaulting to all libraries.")
-    jellyfin_libs = None
-if jellyfin_libs is None:
-    jellyfin_libs = ["all"]
-else:
-    jellyfin_libs = list(jellyfin_libs.split(','))
-
 # Emby Configuration
 try:
     EMBY_SERVER_URL = config.get(BOT_SECTION, 'emby_server_url')
@@ -179,11 +137,11 @@ else:
 
 # Enable/Disable Configurations
 try:
-    USE_JELLYFIN = config.get(BOT_SECTION, 'jellyfin_enabled')
-    USE_JELLYFIN = USE_JELLYFIN.lower() == "true"
+    USE_EMBY = config.get(BOT_SECTION, 'emby_enabled')
+    USE_EMBY = USE_EMBY.lower() == "true"
 except:
-    print("Could not get Jellyfin enable config. Defaulting to False")
-    USE_JELLYFIN = False
+    print("Could not get Emby enable config. Defaulting to False")
+    USE_EMBY = False
 
 try:
     USE_PLEX = config.get(BOT_SECTION, "plex_enabled")
@@ -191,13 +149,6 @@ try:
 except:
     print("Could not get Plex enable config. Defaulting to False")
     USE_PLEX = False
-
-try:
-    USE_EMBY = config.get(BOT_SECTION, "emby_enabled")
-    USE_EMBY = USE_EMBY.lower() == "true"
-except:
-    print("Could not get Emby enable config. Defaulting to False")
-    USE_EMBY = False
 
 def get_config():
     """
