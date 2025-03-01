@@ -311,9 +311,11 @@ class app(commands.Cog):
                     if role is not None and (role in after.roles and role not in before.roles):
                         print("Emby role added")  # Updated to Emby
                         try:
-                            # Send a DM to the user asking for their Emby username
-                            await embedinfo(after, "Welcome to the server! Please reply with your Emby username to be added to the Emby server.")
-                            await embedinfo(after, "If you do not respond within 24 hours, the request will be cancelled, and the server admin will need to add you manually.")
+                            # Send a single DM to the user asking for their Emby username
+                            await embedinfo(after, 
+                                "Welcome to the server! Please reply with your Emby username to be added to the Emby server.\n"
+                                "If you do not respond within 24 hours, the request will be cancelled, and the server admin will need to add you manually."
+                            )
 
                             # Wait for the user's response
                             username = await self.getusername(after)
