@@ -6,7 +6,12 @@ on:
       - emby-support  # Trigger on push to main branch
   pull_request:
     branches:
-      - emby-support # Trigger on pull requests to main branch
+      - emby-support  # Trigger on pull requests to main branch
+
+# Add permissions for the GITHUB_TOKEN
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build-and-push:
