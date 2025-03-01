@@ -1,6 +1,6 @@
 from pickle import FALSE
 import app.bot.helper.jellyfinhelper as jelly
-import app.bot.helper.embyhelper as emby  # Ensure this module is correctly implemented
+import app.bot.helper.embyhelper as emby  # Import Emby helper
 from app.bot.helper.textformat import bcolors
 import discord
 from discord.ext import commands
@@ -20,7 +20,7 @@ BOT_SECTION = 'bot_envs'
 
 plex_configured = True
 jellyfin_configured = True
-emby_configured = True  # New flag for Emby
+emby_configured = True  # Emby configuration flag
 
 config = configparser.ConfigParser()
 config.read(CONFIG_PATH)
@@ -171,12 +171,11 @@ if USE_PLEX and plex_configured:
 else:
     print(f"Plex {'disabled' if not USE_PLEX else 'not configured'}. Skipping Plex login.")
 
-
 class app(commands.Cog):
     # App command groups
     plex_commands = app_commands.Group(name="plex", description="Membarr Plex commands")
     jellyfin_commands = app_commands.Group(name="jellyfin", description="Membarr Jellyfin commands")
-    emby_commands = app_commands.Group(name="emby", description="Membarr Emby commands")  # New group for Emby
+    emby_commands = app_commands.Group(name="emby", description="Membarr Emby commands")  # Emby command group
     membarr_commands = app_commands.Group(name="membarr", description="Membarr general commands")
 
     def __init__(self, bot):
@@ -325,7 +324,6 @@ class app(commands.Cog):
             await embederror(response, f'An account with username {username} already exists.')
             return False
 
-        print(f"Creating Emby user: {username} with password: {password}")  # Debugging
         if emby.add_user(EMBY_SERVER_URL, EMBY_API_KEY, username, password, emby_libs):
             return True
         else:
