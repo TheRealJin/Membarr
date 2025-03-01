@@ -174,31 +174,27 @@ class app(commands.Cog):
                 await embederror(after, message)
                 return None
     
-    async def getusername(self, after):
+    async def getusername(self, user):
         username = None
-        await embedinfo(after, f"Welcome To Emby! Please reply with your username to be added to the Emby server!")  # Updated to Emby
-        await embedinfo(after, f"If you do not respond within 24 hours, the request will be cancelled, and the server admin will need to add you manually.")
-        while (username is None):
+        await embedinfo(user, "Please reply with your Emby username to be added to the Emby server.")
+        while username is None:
             def check(m):
-                return m.author == after and not m.guild
+                return m.author == user and not m.guild
+
             try:
-                username = await self.bot.wait_for('message', timeout=86400, check=check)
-                if(emby.verify_username(EMBY_SERVER_URL, EMBY_API_KEY, str(username.content))):  # Updated to Emby
-                    return str(username.content)
+                msg = await self.bot.wait_for('message', timeout=86400, check=check)  # Wait for 24 hours
+                username = msg.content
+                if emby.verify_username(EMBY_SERVER_URL, EMBY_API_KEY, username):
+                    return username
                 else:
+                    await embederror(user, "This username is already taken. Please choose another username.")
                     username = None
-                    message = "This username is already chosen. Please select another username."
-                    await embederror(after, message)
-                    continue
             except asyncio.TimeoutError:
-                message = "Timed out. Please contact the server admin directly."
-                print("Emby user prompt timed out")
-                await embederror(after, message)
+                await embederror(user, "Timed out. Please contact the server admin directly.")
                 return None
             except Exception as e:
-                await embederror(after, "Something went wrong. Please try again with another username.")
-                print (e)
-                username = None
+                print(f"Error in getusername: {e}")
+                return None
 
     async def addtoplex(self, email, response):
         if(plexhelper.verifyemail(email)):
