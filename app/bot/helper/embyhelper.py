@@ -20,11 +20,6 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
         # Log the raw response for debugging
         print(f"Emby API Response (Create User): {response.text}")
 
-        # Check if the response is HTML (indicating an error or redirection)
-        if response.headers.get("Content-Type", "").startswith("text/html"):
-            print("Error: Received HTML response instead of JSON. Check Emby server URL and API key.")
-            return False
-
         if response.status_code != 200:
             print(f"Error creating new Emby user: {response.text}")
             return False
@@ -51,7 +46,27 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
             print(f"Error setting user password: {response.text}")
             return False
 
-        # Step 3: Grant access to User
+        # Step 3: Verify the password was set
+        url = f"{emby_url}/Users/{userId}"
+        headers = {
+            "X-Emby-Token": emby_api_key,
+            "Content-Type": "application/json"
+        }
+        response = requests.get(url, headers=headers)
+
+        # Log the raw response for debugging
+        print(f"Emby API Response (Verify User): {response.text}")
+
+        if response.status_code != 200:
+            print(f"Error fetching user details: {response.text}")
+            return False
+
+        user_details = response.json()
+        if not user_details.get("HasPassword", False) or not user_details.get("HasConfiguredPassword", False):
+            print(f"Password was not set correctly for user {username}.")
+            return False
+
+        # Step 4: Grant access to User
         url = f"{emby_url}/Users/{userId}/Policy"
         headers = {
             "X-Emby-Token": emby_api_key,
