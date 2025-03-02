@@ -5,7 +5,7 @@ import json
 
 def add_user(emby_url, emby_api_key, username, password, emby_libs):
     try:
-        # Create new Emby user
+        # Step 1: Create new Emby user without a password
         url = f"{emby_url}/Users/New"
         headers = {
             "X-Emby-Token": emby_api_key,
@@ -13,12 +13,12 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
         }
         payload = {
             "Name": username,
-            "Password": password
+            "Password": ""  # Create user without a password initially
         }
         response = requests.post(url, json=payload, headers=headers)
 
         # Log the raw response for debugging
-        print(f"Emby API Response: {response.text}")
+        print(f"Emby API Response (Create User): {response.text}")
 
         # Check if the response is HTML (indicating an error or redirection)
         if response.headers.get("Content-Type", "").startswith("text/html"):
@@ -31,7 +31,27 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
 
         userId = response.json()["Id"]
 
-        # Grant access to User
+        # Step 2: Set the user's password
+        url = f"{emby_url}/Users/{userId}/Password"
+        headers = {
+            "X-Emby-Token": emby_api_key,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "Id": userId,
+            "NewPw": password,
+            "ResetPassword": False
+        }
+        response = requests.post(url, json=payload, headers=headers)
+
+        # Log the raw response for debugging
+        print(f"Emby API Response (Set Password): {response.text}")
+
+        if response.status_code != 204:
+            print(f"Error setting user password: {response.text}")
+            return False
+
+        # Step 3: Grant access to User
         url = f"{emby_url}/Users/{userId}/Policy"
         headers = {
             "X-Emby-Token": emby_api_key,
@@ -80,7 +100,7 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
         response = requests.post(url, json=payload, headers=headers)
 
         # Log the raw response for debugging
-        print(f"Emby API Response: {response.text}")
+        print(f"Emby API Response (Set Policy): {response.text}")
 
         if response.status_code == 200 or response.status_code == 204:
             return True
@@ -91,6 +111,8 @@ def add_user(emby_url, emby_api_key, username, password, emby_libs):
     except Exception as e:
         print(f"Exception in add_user: {e}")
         return False
+
+# Rest of the functions remain unchanged...
 
 def get_libraries(emby_url, emby_api_key):
     try:
