@@ -319,7 +319,7 @@ class app(commands.Cog):
                             username = await self.getusername(after)
                             if username is not None:
                                 await embedinfo(after, "Got it! We will be creating your Emby account shortly!")
-                                password = emby.generate_password(16)  # Generate a random password
+                                password = emby.generate_password(10)  # Generate a random password
                                 if emby.add_user(EMBY_SERVER_URL, EMBY_API_KEY, username, password, emby_libs):
                                     db.save_user_emby(str(after.id), username)
                                     await asyncio.sleep(5)
