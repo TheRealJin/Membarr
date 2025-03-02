@@ -311,7 +311,7 @@ class app(commands.Cog):
                         try:
                             # Send a single DM to the user asking for their Emby username
                             await embedinfo(after, 
-                                "Welcome to the server! Please reply with your Emby username to be added to the Emby server.\n"
+                                "Welcome to Emby! Please reply with your Emby username to be added to the Emby server.\n"
                                 "If you do not respond within 24 hours, the request will be cancelled, and the server admin will need to add you manually."
                             )
 
