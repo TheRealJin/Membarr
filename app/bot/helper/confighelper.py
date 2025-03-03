@@ -2,7 +2,6 @@ import configparser
 import os
 from os import environ, path
 from dotenv import load_dotenv
-import sqlite3
 
 CONFIG_PATH = 'app/config/config.ini'
 BOT_SECTION = 'bot_envs'
@@ -21,8 +20,8 @@ CONFIG_KEYS = [
 Discord_bot_token = ""
 EMBY_SERVER_URL = ""
 EMBY_API_KEY = ""
-AUTHENTIK_SERVER_URL = ""
-AUTHENTIK_API_TOKEN = ""
+AUTHENTIK_SERVER_URL = ""  # Added for Authentik
+AUTHENTIK_API_TOKEN = ""  # Added for Authentik
 emby_libs = ""
 emby_roles = None
 emby_configured = True  # Emby configuration flag
@@ -107,129 +106,6 @@ except:
     print("Could not get Emby enable config. Defaulting to False")
     USE_EMBY = False
 
-# Database setup
-DB_PATH = 'app/data/membarr.db'
-
-def initialize_db():
-    """
-    Initialize the database with the required tables.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            discord_id TEXT UNIQUE,
-            email TEXT,
-            emby_username TEXT,
-            authentik_username TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-def save_user_all(discord_id, email, emby_username, authentik_username):
-    """
-    Save a user's details to the database.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR REPLACE INTO users (discord_id, email, emby_username, authentik_username)
-        VALUES (?, ?, ?, ?)
-    ''', (discord_id, email, emby_username, authentik_username))
-    conn.commit()
-    conn.close()
-
-def save_user_emby(discord_id, emby_username):
-    """
-    Save a user's Emby username to the database.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR REPLACE INTO users (discord_id, emby_username)
-        VALUES (?, ?)
-    ''', (discord_id, emby_username))
-    conn.commit()
-    conn.close()
-
-def save_user_authentik(discord_id, authentik_username):
-    """
-    Save a user's Authentik username to the database.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR REPLACE INTO users (discord_id, authentik_username)
-        VALUES (?, ?)
-    ''', (discord_id, authentik_username))
-    conn.commit()
-    conn.close()
-
-def get_emby_username(discord_id):
-    """
-    Retrieve a user's Emby username from the database.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT emby_username FROM users WHERE discord_id = ?', (discord_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result else None
-
-def get_authentik_username(discord_id):
-    """
-    Retrieve a user's Authentik username from the database.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT authentik_username FROM users WHERE discord_id = ?', (discord_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result else None
-
-def remove_emby(discord_id):
-    """
-    Remove a user's Emby username from the database.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('UPDATE users SET emby_username = NULL WHERE discord_id = ?', (discord_id,))
-    conn.commit()
-    conn.close()
-
-def remove_authentik(discord_id):
-    """
-    Remove a user's Authentik username from the database.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('UPDATE users SET authentik_username = NULL WHERE discord_id = ?', (discord_id,))
-    conn.commit()
-    conn.close()
-
-def delete_user(discord_id):
-    """
-    Delete a user from the database.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM users WHERE discord_id = ?', (discord_id,))
-    conn.commit()
-    conn.close()
-
-def read_all():
-    """
-    Retrieve all users from the database.
-    """
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users')
-    result = cursor.fetchall()
-    conn.close()
-    return result
-
 def get_config():
     """
     Function to return current config
@@ -265,6 +141,3 @@ def change_config(key, value):
     except Exception as e:
         print(e)
         print("Cannot write to config.")
-
-# Initialize the database when this module is imported
-initialize_db()
