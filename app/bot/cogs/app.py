@@ -1,5 +1,6 @@
 from pickle import FALSE
 import app.bot.helper.embyhelper as emby  # Updated to use Emby helper
+import app.bot.helper.authentikhelper as authentik  # Added Authentik helper
 from app.bot.helper.textformat import bcolors
 import discord
 from discord.ext import commands
@@ -14,6 +15,7 @@ CONFIG_PATH = 'app/config/config.ini'
 BOT_SECTION = 'bot_envs'
 
 emby_configured = True  # Updated to Emby
+authentik_configured = True  # Added Authentik
 
 config = configparser.ConfigParser()
 config.read(CONFIG_PATH)
@@ -24,6 +26,13 @@ try:
     EMBY_API_KEY = config.get(BOT_SECTION, "emby_api_key")  # Updated to Emby
 except:
     emby_configured = False  # Updated to Emby
+
+# Get Authentik config
+try:
+    AUTHENTIK_SERVER_URL = config.get(BOT_SECTION, 'authentik_server_url')
+    AUTHENTIK_API_TOKEN = config.get(BOT_SECTION, 'authentik_api_token')
+except:
+    authentik_configured = False
 
 # Get Emby roles config
 try:
@@ -160,10 +169,26 @@ class app(commands.Cog):
                             if username is not None:
                                 await embedinfo(after, "Got it! We will be creating your Emby account shortly!")
                                 password = emby.generate_password(10)  # Generate a random password
+
+                                # Step 1: Create Authentik user
+                                if authentik_configured:
+                                    if authentik.add_user(AUTHENTIK_SERVER_URL, AUTHENTIK_API_TOKEN, username, password):
+                                        await embedcustom(after, "Authentik user created successfully!", {
+                                            'Username': username,
+                                            'Password': f"||{password}||"
+                                        })
+                                    else:
+                                        await embederror(after, "Failed to create Authentik user. Contact the server admin.")
+                                        return
+
+                                # Step 2: Create Emby user
                                 if emby.add_user(EMBY_SERVER_URL, EMBY_API_KEY, username, password, emby_libs):
                                     db.save_user_emby(str(after.id), username)
                                     await asyncio.sleep(5)
-                                    await embedcustom(after, "You have been added to Emby!", {'Username': username, 'Password': f"||{password}||"})
+                                    await embedcustom(after, "You have been added to Emby!", {
+                                        'Username': username,
+                                        'Password': f"||{password}||"
+                                    })
                                     await embedinfo(after, f"Go to {EMBY_EXTERNAL_URL} to log in!")
                                 else:
                                     await embedinfo(after, 'There was an error adding this user to Emby. Message the server admin.')
