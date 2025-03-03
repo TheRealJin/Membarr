@@ -177,6 +177,7 @@ class app(commands.Cog):
                                             'Username': username,
                                             'Password': f"||{password}||"
                                         })
+                                        db.save_user_authentik(str(after.id), username)  # Save Authentik username to database
                                     else:
                                         await embederror(after, "Failed to create Authentik user. Contact the server admin.")
                                         return
@@ -203,16 +204,32 @@ class app(commands.Cog):
                         try:
                             user_id = after.id
                             username = db.get_emby_username(user_id)  # Updated to Emby
-                            emby.remove_user(EMBY_SERVER_URL, EMBY_API_KEY, username)  # Updated to Emby
-                            deleted = db.remove_emby(user_id)  # Updated to Emby
-                            if deleted:
-                                print("Removed Emby from {}".format(after.name))  # Updated to Emby
+                            authentik_username = db.get_authentik_username(user_id)  # Get Authentik username
+
+                            # Step 1: Remove Emby user
+                            if emby.remove_user(EMBY_SERVER_URL, EMBY_API_KEY, username):  # Updated to Emby
+                                print(f"Removed Emby user {username}")  # Updated to Emby
                             else:
-                                print("Cannot remove Emby from this user")  # Updated to Emby
-                            await embedinfo(after, "You have been removed from Emby")  # Updated to Emby
+                                print(f"Failed to remove Emby user {username}")  # Updated to Emby
+
+                            # Step 2: Remove Authentik user
+                            if authentik_configured and authentik_username:
+                                if authentik.remove_user(AUTHENTIK_SERVER_URL, AUTHENTIK_API_TOKEN, authentik_username):
+                                    print(f"Removed Authentik user {authentik_username}")
+                                else:
+                                    print(f"Failed to remove Authentik user {authentik_username}")
+
+                            # Step 3: Remove user from database
+                            deleted = db.remove_emby(user_id)  # Updated to Emby
+                            db.remove_authentik(user_id)  # Remove Authentik user from database
+                            if deleted:
+                                print(f"Removed Emby and Authentik from {after.name}")  # Updated to Emby
+                            else:
+                                print(f"Cannot remove Emby and Authentik from this user")  # Updated to Emby
+                            await embedinfo(after, "You have been removed from Emby and Authentik")  # Updated to Emby
                         except Exception as e:
                             print(e)
-                            print("{} Cannot remove this user from Emby.".format(username))  # Updated to Emby
+                            print(f"{username} Cannot remove this user from Emby and Authentik.")  # Updated to Emby
                         emby_processed = True  # Updated to Emby
                         break
                 if emby_processed:  # Updated to Emby
@@ -222,11 +239,19 @@ class app(commands.Cog):
     async def on_member_remove(self, member):
         if USE_EMBY and emby_configured:  # Updated to Emby
             emby_username = db.get_emby_username(member.id)  # Updated to Emby
+            authentik_username = db.get_authentik_username(member.id)  # Get Authentik username
+
+            # Step 1: Remove Emby user
             emby.remove_user(EMBY_SERVER_URL, EMBY_API_KEY, emby_username)  # Updated to Emby
-            
-        deleted = db.delete_user(member.id)
-        if deleted:
-            print("Removed {} from db because user left discord server.".format(emby_username))  # Updated to Emby
+
+            # Step 2: Remove Authentik user
+            if authentik_configured and authentik_username:
+                authentik.remove_user(AUTHENTIK_SERVER_URL, AUTHENTIK_API_TOKEN, authentik_username)
+
+            # Step 3: Remove user from database
+            deleted = db.delete_user(member.id)
+            if deleted:
+                print(f"Removed {emby_username} and {authentik_username} from db because user left discord server.")  # Updated to Emby
 
     @app_commands.checks.has_permissions(administrator=True)
     @emby_commands.command(name="invite", description="Invite a user to Emby")  # Updated to Emby
