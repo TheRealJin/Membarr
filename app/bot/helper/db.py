@@ -37,6 +37,7 @@ else:
     "id"	INTEGER NOT NULL UNIQUE,
     "discord_username"	TEXT NOT NULL UNIQUE,
     "emby_username" TEXT,  -- Updated to Emby
+    "authentik_username" TEXT,  -- Added for Authentik
     PRIMARY KEY("id" AUTOINCREMENT)
     );''')
 
@@ -61,14 +62,29 @@ def save_user_emby(username, emby_username):  # Updated to Emby
     else:
         return "Discord and Emby usernames cannot be empty"
 
-def save_user_all(username, emby_username):  # Updated to Emby
-    if username and emby_username:
+def save_user_authentik(username, authentik_username):  # Added for Authentik
+    if username and authentik_username:
         conn.execute(f"""
-            INSERT OR REPLACE INTO clients(discord_username, emby_username)
-            VALUES('{username}', '{emby_username}')
+            INSERT OR REPLACE INTO clients(discord_username, authentik_username)
+            VALUES('{username}', '{authentik_username}')
         """)
         conn.commit()
         print("User added to db.")
+    else:
+        return "Discord and Authentik usernames cannot be empty"
+
+def save_user_all(username, emby_username, authentik_username):  # Updated to include Authentik
+    if username and emby_username and authentik_username:
+        conn.execute(f"""
+            INSERT OR REPLACE INTO clients(discord_username, emby_username, authentik_username)
+            VALUES('{username}', '{emby_username}', '{authentik_username}')
+        """)
+        conn.commit()
+        print("User added to db.")
+    elif username and emby_username:
+        save_user_emby(username, emby_username)
+    elif username and authentik_username:
+        save_user_authentik(username, authentik_username)
     elif username:
         save_user(username)
     else:
@@ -96,6 +112,28 @@ def get_emby_username(username):  # Updated to Emby
     else:
         return "username cannot be empty"
 
+def get_authentik_username(username):  # Added for Authentik
+    """
+    Get Authentik username of user based on discord username
+
+    param   username: discord username
+
+    return  Authentik username
+    """
+    if username:
+        try:
+            cursor = conn.execute('SELECT discord_username, authentik_username from clients where discord_username="{}";'.format(username))
+            for row in cursor:
+                authentik_username = row[1]
+            if authentik_username:
+                return authentik_username
+            else:
+                return "No users found"
+        except:
+            return "error in fetching from db"
+    else:
+        return "username cannot be empty"
+
 def remove_emby(username):  # Updated to Emby
     """
     Sets Emby username of discord user to null in database
@@ -104,6 +142,19 @@ def remove_emby(username):  # Updated to Emby
         conn.execute(f"UPDATE clients SET emby_username = null WHERE discord_username = '{username}'")
         conn.commit()
         print(f"Emby username removed from user {username} in database")
+        return True
+    else:
+        print(f"Username cannot be empty.")
+        return False
+
+def remove_authentik(username):  # Added for Authentik
+    """
+    Sets Authentik username of discord user to null in database
+    """
+    if username:
+        conn.execute(f"UPDATE clients SET authentik_username = null WHERE discord_username = '{username}'")
+        conn.commit()
+        print(f"Authentik username removed from user {username} in database")
         return True
     else:
         print(f"Username cannot be empty.")
