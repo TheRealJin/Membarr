@@ -1,6 +1,6 @@
 import sqlite3
 
-CURRENT_VERSION = 'Membarr V1.1'
+CURRENT_VERSION = 'Membarr V1.2'  # Updated version to reflect the addition of Authentik
 
 table_history = {
     'Invitarr V1.0': [
@@ -12,6 +12,12 @@ table_history = {
         (0, 'id', 'INTEGER', 1, None, 1),
         (1, 'discord_username', 'TEXT', 1, None, 0),
         (2, 'emby_username', 'TEXT', 0, None, 0)  # Updated to Emby
+    ],
+    'Membarr V1.2': [  # Added for Authentik
+        (0, 'id', 'INTEGER', 1, None, 1),
+        (1, 'discord_username', 'TEXT', 1, None, 0),
+        (2, 'emby_username', 'TEXT', 0, None, 0),  # Updated to Emby
+        (3, 'authentik_username', 'TEXT', 0, None, 0)  # Added for Authentik
     ]
 }
 
@@ -58,5 +64,31 @@ def update_table(conn, tablename):
         ''')
         conn.commit()
         version = 'Membarr V1.1'
+
+    # Update to Membarr V1.2 table (with Authentik support)
+    if version == 'Membarr V1.1':
+        print("Upgrading DB table from Membarr V1.1 to Membarr V1.2")
+        # Create temp table
+        conn.execute(
+        '''CREATE TABLE "membarr_temp_upgrade_table" (
+        "id"	INTEGER NOT NULL UNIQUE,
+        "discord_username"	TEXT NOT NULL UNIQUE,
+        "emby_username" TEXT,  # Updated to Emby
+        "authentik_username" TEXT,  # Added for Authentik
+        PRIMARY KEY("id" AUTOINCREMENT)
+        );''')
+        conn.execute(f'''
+        INSERT INTO membarr_temp_upgrade_table(id, discord_username, emby_username)
+        SELECT id, discord_username, emby_username
+        FROM {tablename};
+        ''')
+        conn.execute(f'''
+        DROP TABLE {tablename};
+        ''')
+        conn.execute(f'''
+        ALTER TABLE membarr_temp_upgrade_table RENAME TO {tablename}
+        ''')
+        conn.commit()
+        version = 'Membarr V1.2'
 
     print('------')
