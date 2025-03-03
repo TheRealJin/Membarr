@@ -36,23 +36,11 @@ else:
     '''CREATE TABLE "clients" (
     "id"	INTEGER NOT NULL UNIQUE,
     "discord_username"	TEXT NOT NULL UNIQUE,
-    "email"	TEXT,
     "emby_username" TEXT,  -- Updated to Emby
     PRIMARY KEY("id" AUTOINCREMENT)
     );''')
 
 update_table(conn, DB_TABLE)
-
-def save_user_email(username, email):
-    if username and email:
-        conn.execute(f"""
-            INSERT OR REPLACE INTO clients(discord_username, email)
-            VALUES('{username}', '{email}')
-        """)
-        conn.commit()
-        print("User added to db.")
-    else:
-        return "Username and email cannot be empty"
 
 def save_user(username):
     if username:
@@ -73,37 +61,18 @@ def save_user_emby(username, emby_username):  # Updated to Emby
     else:
         return "Discord and Emby usernames cannot be empty"
 
-def save_user_all(username, email, emby_username):  # Updated to Emby
-    if username and email and emby_username:
+def save_user_all(username, emby_username):  # Updated to Emby
+    if username and emby_username:
         conn.execute(f"""
-            INSERT OR REPLACE INTO clients(discord_username, email, emby_username)
-            VALUES('{username}', '{email}', '{emby_username}')
+            INSERT OR REPLACE INTO clients(discord_username, emby_username)
+            VALUES('{username}', '{emby_username}')
         """)
         conn.commit()
         print("User added to db.")
-    elif username and email:
-        save_user_email(username, email)
-    elif username and emby_username:
-        save_user_emby(username, emby_username)
     elif username:
         save_user(username)
     else:
-        return "Discord username must all be provided"
-
-def get_useremail(username):
-    if username:
-        try:
-            cursor = conn.execute('SELECT discord_username, email from clients where discord_username="{}";'.format(username))
-            for row in cursor:
-                email = row[1]
-            if email:
-                return email
-            else:
-                return "No email found"
-        except:
-            return "error in fetching from db"
-    else:
-        return "username cannot be empty"
+        return "Discord username must be provided"
 
 def get_emby_username(username):  # Updated to Emby
     """
@@ -126,19 +95,6 @@ def get_emby_username(username):  # Updated to Emby
             return "error in fetching from db"
     else:
         return "username cannot be empty"
-
-def remove_email(username):
-    """
-    Sets email of discord user to null in database
-    """
-    if username:
-        conn.execute(f"UPDATE clients SET email = null WHERE discord_username = '{username}'")
-        conn.commit()
-        print(f"Email removed from user {username} in database")
-        return True
-    else:
-        print(f"Username cannot be empty.")
-        return False
 
 def remove_emby(username):  # Updated to Emby
     """
