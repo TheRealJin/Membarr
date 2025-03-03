@@ -11,8 +11,7 @@ table_history = {
     'Membarr V1.1': [
         (0, 'id', 'INTEGER', 1, None, 1),
         (1, 'discord_username', 'TEXT', 1, None, 0),
-        (2, 'email', 'TEXT', 0, None, 0),
-        (3, 'emby_username', 'TEXT', 0, None, 0)  # Updated to Emby
+        (2, 'emby_username', 'TEXT', 0, None, 0)  # Updated to Emby
     ]
 }
 
@@ -43,13 +42,12 @@ def update_table(conn, tablename):
         '''CREATE TABLE "membarr_temp_upgrade_table" (
         "id"	INTEGER NOT NULL UNIQUE,
         "discord_username"	TEXT NOT NULL UNIQUE,
-        "email"	TEXT,
         "emby_username" TEXT,  # Updated to Emby
         PRIMARY KEY("id" AUTOINCREMENT)
         );''')
         conn.execute(f'''
-        INSERT INTO membarr_temp_upgrade_table(id, discord_username, email)
-        SELECT id, discord_username, email
+        INSERT INTO membarr_temp_upgrade_table(id, discord_username)
+        SELECT id, discord_username
         FROM {tablename};
         ''')
         conn.execute(f'''
