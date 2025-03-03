@@ -11,26 +11,17 @@ config = configparser.ConfigParser()
 
 # Define all configuration keys, including Emby
 CONFIG_KEYS = [
-    'username', 'password', 'discord_bot_token', 'plex_user', 'plex_pass', 'plex_token',
-    'plex_base_url', 'plex_roles', 'plex_server_name', 'plex_libs', 'owner_id', 'channel_id',
+    'username', 'password', 'discord_bot_token', 'owner_id', 'channel_id',
     'auto_remove_user', 'emby_api_key', 'emby_server_url', 'emby_roles', 'emby_libs',
-    'plex_enabled', 'emby_enabled', 'emby_external_url'
+    'emby_enabled', 'emby_external_url'
 ]
 
 # Settings
 Discord_bot_token = ""
-plex_roles = None
-PLEXUSER = ""
-PLEXPASS = ""
-PLEX_SERVER_NAME = ""
-PLEX_TOKEN = ""
-PLEX_BASE_URL = ""
-Plex_LIBS = None
 EMBY_SERVER_URL = ""
 EMBY_API_KEY = ""
 emby_libs = ""
 emby_roles = None
-plex_configured = True
 emby_configured = True  # Emby configuration flag
 
 switch = 0
@@ -59,45 +50,6 @@ if not path.exists(CONFIG_PATH):
 # Read the config file
 config = configparser.ConfigParser()
 config.read(CONFIG_PATH)
-
-# Plex Configuration
-plex_token_configured = True
-try:
-    PLEX_TOKEN = config.get(BOT_SECTION, 'plex_token')
-    PLEX_BASE_URL = config.get(BOT_SECTION, 'plex_base_url')
-except:
-    print("No Plex auth token details found")
-    plex_token_configured = False
-
-try:
-    PLEX_SERVER_NAME = config.get(BOT_SECTION, 'plex_server_name')
-    PLEXUSER = config.get(BOT_SECTION, 'plex_user')
-    PLEXPASS = config.get(BOT_SECTION, 'plex_pass')
-except:
-    print("No Plex login info found")
-    if not plex_token_configured:
-        print("Could not load plex config")
-        plex_configured = False
-
-try:
-    plex_roles = config.get(BOT_SECTION, 'plex_roles')
-except:
-    print("Could not get Plex roles config")
-    plex_roles = None
-if plex_roles:
-    plex_roles = list(plex_roles.split(','))
-else:
-    plex_roles = []
-
-try:
-    Plex_LIBS = config.get(BOT_SECTION, 'plex_libs')
-except:
-    print("Could not get Plex libs config. Defaulting to all libraries.")
-    Plex_LIBS = None
-if Plex_LIBS is None:
-    Plex_LIBS = ["all"]
-else:
-    Plex_LIBS = list(Plex_LIBS.split(','))
 
 # Emby Configuration
 try:
@@ -142,13 +94,6 @@ try:
 except:
     print("Could not get Emby enable config. Defaulting to False")
     USE_EMBY = False
-
-try:
-    USE_PLEX = config.get(BOT_SECTION, "plex_enabled")
-    USE_PLEX = USE_PLEX.lower() == "true"
-except:
-    print("Could not get Plex enable config. Defaulting to False")
-    USE_PLEX = False
 
 def get_config():
     """
