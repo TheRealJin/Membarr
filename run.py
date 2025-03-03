@@ -7,9 +7,10 @@ from discord.ui import Button, View, Select
 from discord import app_commands
 import asyncio
 import sys
-from app.bot.helper.confighelper import MEMBARR_VERSION, switch, Discord_bot_token, emby_roles
+from app.bot.helper.confighelper import MEMBARR_VERSION, switch, Discord_bot_token, emby_roles, AUTHENTIK_SERVER_URL, AUTHENTIK_API_TOKEN
 import app.bot.helper.confighelper as confighelper
 import app.bot.helper.embyhelper as emby
+import app.bot.helper.authentikhelper as authentik  # Added for Authentik
 from app.bot.helper.message import *
 from requests import ConnectTimeout
 
@@ -69,6 +70,7 @@ async def getuser(interaction, server, type):
 
 
 emby_commands = app_commands.Group(name="embysettings", description="Membarr Emby commands")
+authentik_commands = app_commands.Group(name="authentiksettings", description="Membarr Authentik commands")  # Added for Authentik
 
 
 @emby_commands.command(name="addrole", description="Add a role to automatically add users to Emby")
@@ -209,6 +211,85 @@ async def disableemby(interaction: discord.Interaction):
     print("Bot has restarted. Give it a few seconds.")
 
 
+# Authentik Setup Command
+@authentik_commands.command(name="setup", description="Setup Authentik integration")
+@app_commands.checks.has_permissions(administrator=True)
+async def setupauthentik(interaction: discord.Interaction, server_url: str, api_token: str):
+    await interaction.response.defer()
+    # get rid of trailing slashes
+    server_url = server_url.rstrip('/')
+
+    try:
+        # Test Authentik connection by fetching the health status
+        health_status = authentik.get_status(server_url, api_token)
+        if health_status == 200:
+            pass
+        elif health_status == 401:
+            # Unauthorized
+            await embederror(interaction.followup, "API token provided is invalid")
+            return
+        elif health_status == 403:
+            # Forbidden
+            await embederror(interaction.followup, "API token provided does not have permissions")
+            return
+        elif health_status == 404:
+            # Page not found
+            await embederror(interaction.followup, "Server endpoint provided was not found")
+            return
+        else:
+            await embederror(interaction.followup,
+                             "Unknown error occurred while connecting to Authentik. Check Membarr logs.")
+    except ConnectTimeout as e:
+        await embederror(interaction.followup,
+                         "Connection to server timed out. Check that Authentik is online and reachable.")
+        return
+    except Exception as e:
+        print("Exception while testing Authentik connection")
+        print(type(e).__name__)
+        print(e)
+        await embederror(interaction.followup, "Unknown exception while connecting to Authentik. Check Membarr logs")
+        return
+
+    confighelper.change_config("authentik_server_url", str(server_url))
+    confighelper.change_config("authentik_api_token", str(api_token))
+    print("Authentik server URL and API token updated. Restarting bot.")
+    await interaction.followup.send("Authentik server URL and API token updated. Restarting bot.", ephemeral=True)
+    await reload()
+    print("Bot has been restarted. Give it a few seconds.")
+
+
+# Enable / Disable Authentik integration
+@authentik_commands.command(name="enable", description="Enable adding users to Authentik")
+@app_commands.checks.has_permissions(administrator=True)
+async def enableauthentik(interaction: discord.Interaction):
+    if confighelper.USE_AUTHENTIK:
+        await interaction.response.send_message("Authentik already enabled.", ephemeral=True)
+        return
+    confighelper.change_config("authentik_enabled", True)
+    print("Authentik enabled, reloading server")
+    confighelper.USE_AUTHENTIK = True
+    await reload()
+    await interaction.response.send_message("Authentik enabled. Restarting server. Give it a few seconds.",
+                                            ephemeral=True)
+    print("Bot has restarted. Give it a few seconds.")
+
+
+@authentik_commands.command(name="disable", description="Disable adding users to Authentik")
+@app_commands.checks.has_permissions(administrator=True)
+async def disableauthentik(interaction: discord.Interaction):
+    if not confighelper.USE_AUTHENTIK:
+        await interaction.response.send_message("Authentik already disabled.", ephemeral=True)
+        return
+    confighelper.change_config("authentik_enabled", False)
+    print("Authentik disabled, reloading server")
+    await reload()
+    confighelper.USE_AUTHENTIK = False
+    await interaction.response.send_message("Authentik disabled. Restarting server. Give it a few seconds.",
+                                            ephemeral=True)
+    print("Bot has restarted. Give it a few seconds.")
+
+
 bot.tree.add_command(emby_commands)
+bot.tree.add_command(authentik_commands)  # Added for Authentik
 
 bot.run(Discord_bot_token)
